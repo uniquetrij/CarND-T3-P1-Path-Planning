@@ -336,7 +336,7 @@ int main()
 
                         if (lane > 0 && rear_clearence[lane - 1] > 10
                             && front_clearence[lane] > 10 && front_clearence[lane - 1] > fc)
-                            if (2 * rear_speed[lane - 1] > car_speed) {
+                            if (rear_speed[lane - 1] > car_speed) {
                                 if (rear_clearence[lane - 1] > 10)
                                     fc = front_clearence[l = lane - 1];
                             }
@@ -346,7 +346,7 @@ int main()
 
                         if (lane < 2 && rear_clearence[lane + 1] > 10
                             && front_clearence[lane] > 10 && front_clearence[lane + 1] > fc)
-                            if (2 * rear_speed[lane + 1] > car_speed) {
+                            if (rear_speed[lane + 1] > car_speed) {
                                 if (rear_clearence[lane + 1] > 10)
                                     fc = front_clearence[l = lane + 1];
                             }
@@ -402,8 +402,8 @@ int main()
                     }
 
 
-                    double dist_inc = 50;
-                    for (int i = 0; i < 5; i++) {
+                    double dist_inc = 60;
+                    for (int i = 0; i < 6; i++) {
                         double next_s = car_s + (i + 1) * dist_inc;
                         double next_d = 2 + 4 * lane;
                         vector<double> xy = getXY(next_s, next_d,
@@ -434,7 +434,7 @@ int main()
 
                     double x_add_on = 0;
 
-                    for (int i = 1; i <= 50 - previous_path_size; i++) {
+                    for (int i = 1; i <= 60 - previous_path_size; i++) {
                         double N = target_dist / (0.02 * ref_v / 2.24);
                         double x_point = x_add_on + target_x / N;
                         double y_point = s(x_point);
