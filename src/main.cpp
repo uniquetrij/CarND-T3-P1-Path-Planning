@@ -176,7 +176,7 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
     return {x, y};
 }
 
-double max_v = 49.5;
+double max_v = 49;
 double ref_v = 5;
 int lane = 1;
 double const MAX = std::numeric_limits<double>::max();
@@ -337,7 +337,7 @@ int main()
                         if (lane > 0 && rear_clearence[lane - 1] > 10
                             && front_clearence[lane] > 10 && front_clearence[lane - 1] > fc)
                             if (2 * rear_speed[lane - 1] > car_speed) {
-                                if (rear_clearence[lane - 1] > 15)
+                                if (rear_clearence[lane - 1] > 10)
                                     fc = front_clearence[l = lane - 1];
                             }
                             else
@@ -347,7 +347,7 @@ int main()
                         if (lane < 2 && rear_clearence[lane + 1] > 10
                             && front_clearence[lane] > 10 && front_clearence[lane + 1] > fc)
                             if (2 * rear_speed[lane + 1] > car_speed) {
-                                if (rear_clearence[lane + 1] > 15)
+                                if (rear_clearence[lane + 1] > 10)
                                     fc = front_clearence[l = lane + 1];
                             }
                             else
@@ -362,9 +362,9 @@ int main()
                         double x = front_clearence[lane] / 30.0;
                         ref_v = max_v * 1 / (1 + pow(M_E, -8 * x + 4));
                     }
-                    else if (car_speed < max_v) {
-                        ref_v *= 1.05;
-                        ref_v = min(ref_v, max_v);
+                    else if (ref_v < max_v) {
+                        double x = (max_v - ref_v) / (max_v * 10);
+                        ref_v = ref_v * (1 + 1 / (1 + pow(M_E, -8 * x + 4)));
                     }
 
                     vector<double> ptsx;
