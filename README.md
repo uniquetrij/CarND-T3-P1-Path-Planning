@@ -87,54 +87,37 @@ A really helpful resource for doing this project and creating smooth trajectorie
     git checkout e94b6e1
     ```
 
-## Editor Settings
+## Model
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+The primary intuition for this model is as follows:
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+1. If the car is on a free lane with no other vehicles immediately ahead of it (say within 30 meters in front), the car should keep moving on the lane, possibly with its maximum speed limit. If the speed is lower than the max limit, the car should try to speed up so as to gradually reach the max speed.
 
-## Code Style
+2. If the car is being blocked by another vehicle ahead of it on the same lane, it should check whether any of the adjacent lanes are free so as to overtake the vehicle. If multiple such lanes exists, then the car should chose the lane that has maximum clearance ahead of it, to prevent too frequent lane switching unnecessarily.
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+3. Before changing a lane, the car should check whether another car is approaching from behind in the other lane. It should change lane only if the vehicle approaching is far behind or has much lesser velocity than the car so as to avoid collision. 
 
-## Project Instructions and Rubric
+4. Also while changing lane, the car should keep enough distance from the vehicle ahead of it in the same lane to avoid collision.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+Keeping the above points in mind, my model works as follows.
+ 
+I calculate the front and rear clearance of each lane from the current position of the car using the `lanesCheck` method (lines 190-236). This method also preserves the speeds of the nearest front and rear vehicles. 
+
+At first, only the current lane clearances are computed (line 389). Based on this, the next step is to choose whether to continue on the same lane or change to an adjacent lane. The lane selection us done using the `selectLane` method. If the front clearance is not enough (less than 30 meters), the method compute the clearances of the other lanes (line 268). The adjacent lane with max front clearance and adequate rear clearance is chosen (lines 270-292). If no suitable lanes were found, the car will continue on the same lane. Also the variable `stayInLane` keeps a track of how long the car has been in the same lane before it can change the lane. This prevents too frequent lane switching.
+
+Finally it is required to regulate the velocity of the car. This is done by the `checkVelocity` method. If the car is being obstructed by another vehicle and adjacent lanes are not available to shift to, the speed needs to be reduced to that of the vehicle its following (lines 245-244). Otherwise, its velocity should tend to reach to the max limit (lines 246-149). In either case, to prevent jerking, it is necessary to check that the velocity change is not very large (lines 251-259). 
+
+Once the lane and velocity is determined, it is time to create a trajectory for the vehicle's path. A total of 8 waypoints  (x,y and yaw heading of the car) are generated, first two of them being the previous and current states respectively. The other 6 points are future trajectory estimation points at intervals of 60 meters from one another. These points are then converted to car coordinates from map coordinates that are finally used to compute a spline that passes through each of them. Now using this spline, I generated other waypoints with the lane and velocity computed previously at an interval of 0.02 seconds. Next I converted the points back to map coordinates and returned them to the simulator to drive the car through that path (lines 395-483). These section was taken directly as described in the project walkthrough.
+
+## Conclusion
+
+The result of the execution of the model on the simulator was very good. The car maintained maximum velocity whenever possible, and changed lanes whenever required and a lane was available. Otherwise it maintained the velocity of the car preceding it unless one of the adjacent lanes cleared up. 
+
+The parameters tuned are specific to the hardware on which the model was tested. It might need retuning if the hardware changes.
 
 
-## Call for IDE Profiles Pull Requests
 
-Help your fellow students!
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 

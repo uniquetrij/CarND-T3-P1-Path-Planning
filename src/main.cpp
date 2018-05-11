@@ -181,13 +181,13 @@ double ref_v = 5;
 int lane = 1;
 double const MAX = std::numeric_limits<double>::max();
 double const MIN = std::numeric_limits<double>::min();
-vector<double> front_clearence{MAX, MAX, MAX};
+vector<double> front_clearance{MAX, MAX, MAX};
 vector<double> front_speed{0, 0, 0};
-vector<double> rear_clearence{MIN, MIN, MIN};
+vector<double> rear_clearance{MIN, MIN, MIN};
 vector<double> rear_speed{0, 0, 0};
-double t = 0;
+double stayInLane = 0;
 
-bool lanesCheck(nlohmann::basic_json<> sensor_fusion, int previous_path_size, double car_s, int lane, bool invert)
+void lanesCheck(nlohmann::basic_json<> sensor_fusion, int previous_path_size, double car_s, int lane, bool invert)
 {
     for (int i = 0; i < sensor_fusion.size(); i++) {
         float d = sensor_fusion[i][6];
@@ -218,16 +218,16 @@ bool lanesCheck(nlohmann::basic_json<> sensor_fusion, int previous_path_size, do
 
         check_car_s + ((double) previous_path_size * 0.02 * check_speed);
         if (check_car_s > car_s && (check_car_s - car_s) < MAX) {
-            if (fabs(check_car_s - car_s) < front_clearence[l]) {
-                front_clearence[l] = fabs(check_car_s - car_s);
+            if (fabs(check_car_s - car_s) < front_clearance[l]) {
+                front_clearance[l] = fabs(check_car_s - car_s);
                 front_speed[l] = check_speed;
             }
 
         }
 
         else if (car_s > check_car_s && (car_s - check_car_s) < MAX) {
-            if (fabs(check_car_s - car_s) < rear_clearence[l]) {
-                rear_clearence[l] = fabs(check_car_s - car_s);
+            if (fabs(check_car_s - car_s) < rear_clearance[l]) {
+                rear_clearance[l] = fabs(check_car_s - car_s);
                 rear_speed[l] = check_speed;
             }
 
@@ -239,8 +239,8 @@ void checkVelocity()
 {
     double v = 0;
 
-    if (front_clearence[lane] < 30) {
-        double x = front_clearence[lane] / 30.0;
+    if (front_clearance[lane] < 30) {
+        double x = front_clearance[lane] / 30.0;
         v = max_v * 1 / (1 + pow(M_E, -8 * x + 4));
     }
     else if (ref_v < max_v) {
@@ -264,35 +264,35 @@ void checkVelocity()
 
 void selectLane(nlohmann::basic_json<> sensor_fusion, int previous_path_size, double car_s, double car_speed)
 {
-    if (t > 10 && front_clearence[lane] < 30) {
+    if (stayInLane > 10 && front_clearance[lane] < 30) {
         lanesCheck(sensor_fusion, previous_path_size, car_s, lane, true);
 
-        double fc = front_clearence[lane];
+        double fc = front_clearance[lane];
         int l = lane;
 
-        if (lane > 0 && rear_clearence[lane - 1] > 10
-            && front_clearence[lane] > 10 && front_clearence[lane - 1] > fc)
+        if (lane > 0 && rear_clearance[lane - 1] > 10
+            && front_clearance[lane] > 10 && front_clearance[lane - 1] > fc)
             if (rear_speed[lane - 1] > car_speed) {
-                if (rear_clearence[lane - 1] > 10)
-                    fc = front_clearence[l = lane - 1];
+                if (rear_clearance[lane - 1] > 10)
+                    fc = front_clearance[l = lane - 1];
             }
             else
-                fc = front_clearence[l = lane - 1];
+                fc = front_clearance[l = lane - 1];
 
 
-        if (lane < 2 && rear_clearence[lane + 1] > 10
-            && front_clearence[lane] > 10 && front_clearence[lane + 1] > fc)
+        if (lane < 2 && rear_clearance[lane + 1] > 10
+            && front_clearance[lane] > 10 && front_clearance[lane + 1] > fc)
             if (rear_speed[lane + 1] > car_speed) {
-                if (rear_clearence[lane + 1] > 10)
-                    fc = front_clearence[l = lane + 1];
+                if (rear_clearance[lane + 1] > 10)
+                    fc = front_clearance[l = lane + 1];
             }
             else
-                fc = front_clearence[l = lane + 1];
+                fc = front_clearance[l = lane + 1];
 
         lane = l;
-        t = 0;
+        stayInLane = 0;
     }
-    t++;
+    stayInLane++;
 }
 
 int main()
@@ -380,11 +380,11 @@ int main()
 
                     int previous_path_size = previous_path_x.size();
 
-                    front_clearence.assign(front_clearence.size(), MAX);
-                    rear_clearence.assign(rear_clearence.size(), MAX);
+                    front_clearance.assign(front_clearance.size(), MAX);
+                    rear_clearance.assign(rear_clearance.size(), MAX);
 
-                    front_speed.assign(front_clearence.size(), 0);
-                    rear_speed.assign(rear_clearence.size(), 0);
+                    front_speed.assign(front_clearance.size(), 0);
+                    rear_speed.assign(rear_clearance.size(), 0);
 
                     lanesCheck(sensor_fusion, previous_path_size, car_s, lane, false);
 
@@ -425,7 +425,6 @@ int main()
                         ptsy.push_back(ref_y);
 
                     }
-
 
                     double dist_inc = 60;
                     for (int i = 0; i < 6; i++) {
