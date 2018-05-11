@@ -358,13 +358,28 @@ int main()
                     }
                     t++;
 
+                    double v = 0;
+
                     if (front_clearence[lane] < 30) {
                         double x = front_clearence[lane] / 30.0;
-                        ref_v = max_v * 1 / (1 + pow(M_E, -8 * x + 4));
+                        v = max_v * 1 / (1 + pow(M_E, -8 * x + 4));
                     }
                     else if (ref_v < max_v) {
-                        double x = (max_v - ref_v) / (max_v * 10);
-                        ref_v = ref_v * (1 + 1 / (1 + pow(M_E, -8 * x + 4)));
+                        double x = (max_v - ref_v) / (max_v * 30);
+                        v = ref_v * (1 + 1 / (1 + pow(M_E, -8 * x + 4)));
+                    }
+
+                    if (v > 0) {
+                        if (v > ref_v) {
+                            while ((v - ref_v) > 2)
+                                v *= 0.99;
+                        }
+                        else if (ref_v > v) {
+                            while ((ref_v - v) > 2)
+                                v *= 1.01;
+                        }
+
+                        ref_v = v;
                     }
 
                     vector<double> ptsx;
