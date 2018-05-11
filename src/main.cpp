@@ -258,7 +258,7 @@ void checkVelocity()
                 v *= 1.01;
         }
 
-        ref_v = v;
+        ref_v = min(v, max_v);
     }
 }
 
