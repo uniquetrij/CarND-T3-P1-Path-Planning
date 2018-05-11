@@ -235,6 +235,66 @@ bool lanesCheck(nlohmann::basic_json<> sensor_fusion, int previous_path_size, do
     }
 }
 
+void checkVelocity()
+{
+    double v = 0;
+
+    if (front_clearence[lane] < 30) {
+        double x = front_clearence[lane] / 30.0;
+        v = max_v * 1 / (1 + pow(M_E, -8 * x + 4));
+    }
+    else if (ref_v < max_v) {
+        double x = (max_v - ref_v) / (max_v * 30);
+        v = ref_v * (1 + 1 / (1 + pow(M_E, -8 * x + 4)));
+    }
+
+    if (v > 0) {
+        if (v > ref_v) {
+            while ((v - ref_v) > 2)
+                v *= 0.99;
+        }
+        else if (ref_v > v) {
+            while ((ref_v - v) > 2)
+                v *= 1.01;
+        }
+
+        ref_v = v;
+    }
+}
+
+void selectLane(nlohmann::basic_json<> sensor_fusion, int previous_path_size, double car_s, double car_speed)
+{
+    if (t > 10 && front_clearence[lane] < 30) {
+        lanesCheck(sensor_fusion, previous_path_size, car_s, lane, true);
+
+        double fc = front_clearence[lane];
+        int l = lane;
+
+        if (lane > 0 && rear_clearence[lane - 1] > 10
+            && front_clearence[lane] > 10 && front_clearence[lane - 1] > fc)
+            if (rear_speed[lane - 1] > car_speed) {
+                if (rear_clearence[lane - 1] > 10)
+                    fc = front_clearence[l = lane - 1];
+            }
+            else
+                fc = front_clearence[l = lane - 1];
+
+
+        if (lane < 2 && rear_clearence[lane + 1] > 10
+            && front_clearence[lane] > 10 && front_clearence[lane + 1] > fc)
+            if (rear_speed[lane + 1] > car_speed) {
+                if (rear_clearence[lane + 1] > 10)
+                    fc = front_clearence[l = lane + 1];
+            }
+            else
+                fc = front_clearence[l = lane + 1];
+
+        lane = l;
+        t = 0;
+    }
+    t++;
+}
+
 int main()
 {
     uWS::Hub h;
@@ -328,59 +388,9 @@ int main()
 
                     lanesCheck(sensor_fusion, previous_path_size, car_s, lane, false);
 
-                    if (t > 10 && front_clearence[lane] < 30) {
-                        lanesCheck(sensor_fusion, previous_path_size, car_s, lane, true);
+                    selectLane(sensor_fusion, previous_path_size, car_s, car_speed);
 
-                        double fc = front_clearence[lane];
-                        int l = lane;
-
-                        if (lane > 0 && rear_clearence[lane - 1] > 10
-                            && front_clearence[lane] > 10 && front_clearence[lane - 1] > fc)
-                            if (rear_speed[lane - 1] > car_speed) {
-                                if (rear_clearence[lane - 1] > 10)
-                                    fc = front_clearence[l = lane - 1];
-                            }
-                            else
-                                fc = front_clearence[l = lane - 1];
-
-
-                        if (lane < 2 && rear_clearence[lane + 1] > 10
-                            && front_clearence[lane] > 10 && front_clearence[lane + 1] > fc)
-                            if (rear_speed[lane + 1] > car_speed) {
-                                if (rear_clearence[lane + 1] > 10)
-                                    fc = front_clearence[l = lane + 1];
-                            }
-                            else
-                                fc = front_clearence[l = lane + 1];
-
-                        lane = l;
-                        t = 0;
-                    }
-                    t++;
-
-                    double v = 0;
-
-                    if (front_clearence[lane] < 30) {
-                        double x = front_clearence[lane] / 30.0;
-                        v = max_v * 1 / (1 + pow(M_E, -8 * x + 4));
-                    }
-                    else if (ref_v < max_v) {
-                        double x = (max_v - ref_v) / (max_v * 30);
-                        v = ref_v * (1 + 1 / (1 + pow(M_E, -8 * x + 4)));
-                    }
-
-                    if (v > 0) {
-                        if (v > ref_v) {
-                            while ((v - ref_v) > 2)
-                                v *= 0.99;
-                        }
-                        else if (ref_v > v) {
-                            while ((ref_v - v) > 2)
-                                v *= 1.01;
-                        }
-
-                        ref_v = v;
-                    }
+                    checkVelocity();
 
                     vector<double> ptsx;
                     vector<double> ptsy;
