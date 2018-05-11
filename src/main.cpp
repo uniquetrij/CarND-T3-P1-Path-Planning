@@ -176,7 +176,7 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
     return {x, y};
 }
 
-double max_v = 49;
+double max_v = 49.5;
 double ref_v = 5;
 int lane = 1;
 double const MAX = std::numeric_limits<double>::max();
